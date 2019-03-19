@@ -36,6 +36,34 @@
       
   Note down both these tokens, they are essential for what follows.
 
+## Basic Vault operations
+
+- Get a shell in the client container
+
+     docker exec -ti vault-in-practice_client_1 bash
+
+- 'vault status'
+- 'vault login' use the root token from the log
+- 'vault kv put secret/workshop foo=bar'
+- 'vault kv get secret/workshop'
+- 'vault kv put secret/workshop foo=barbar'
+- 'vault kv get secret/workshop'
+- 'vault kv get --version=1 secret/workshop/one' get an older version
+
+- 'vault kv put secret/hello foo=bar' create four versions of a secret
+- 'vault kv put secret/hello foo=barr'
+- 'vault kv put secret/hello foo=barrr'
+- 'vault kv put secret/hello foo=barrrr'
+- 'vault kv destroy -versions=2 secret/hello' this destroys the second version of the secret
+
+- 'vault policy write test policy1.hcl'
+- 'vault auth enable userpass' this is using the API at https://www.vaultproject.io/api/auth/userpass/index.html, we
+  are showing this here, but all interaction with Vault is through API described like this
+- 'vault write auth/userpass/users/workshop password="workshop" policies="test"'
+- 'vault login -method=userpass username=workshop password=workshop' login as the newly created user
+- 'vault kv get secret/hello' permission denied
+- 'vault kv get secret/workshop'
+- 'vault kv put secret/workshop foo=bar'
 
 ## 3. Initializing & unsealing Vault
 
@@ -49,12 +77,37 @@
 
 * Setting the token securely
 
+## Dynamic postgres secret
+
+https://www.vaultproject.io/docs/secrets/databases/postgresql.html
+
+- 'vault secrets enable database'
+- create the dynamic secret
+
+    vault write database/config/vaultpg \
+        plugin_name=postgresql-database-plugin \
+        allowed_roles="create" \
+        connection_url="postgresql://{{username}}:{{password}}@db:5432/vaultpg?sslmode=disable" \
+        username="vaultpg" \
+        password="monkey123"
+
+    vault write database/roles/create \
+        db_name=vaultpg \
+        creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; \
+            GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
+        default_ttl="1h" \
+        max_ttl="24h"
+
+- 'vault read database/creds/create' to get freshly created credentials
+
+- psql -h db -U v-root-create-es6wKLxlCagkQS9Gc9dN-1553011618 -d vaultpg
+
 ## Using VaultManager
 
 First we provision the vault by (in the client container) going into the directory /provision-vault/ first defining
 the token
 
-    export VAULT_TOKEN=s.y6Ky8WAfvEePyAxRHncSQ2Aa
+    export VAULT_TOKEN=s.fRiC5c78dJZ5Xvn5QmXnPai5
     
 and then provisioning the vault using
 

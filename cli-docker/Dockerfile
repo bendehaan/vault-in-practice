@@ -20,4 +20,6 @@ RUN pip3.6 install -r requirements.txt
 
 ADD files/provision-vault /provision-vault
 
+ADD files/policy1.hcl /policy1.hcl
+
 CMD bash
