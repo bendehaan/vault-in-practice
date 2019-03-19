@@ -1,5 +1,31 @@
-# Vault cli container
-#
-# Vault server container (file backend)
-#
-# Postgresql container
+version: '3'
+services:
+  client:
+    image: kasterma/vip:0.0.0
+    command: sh -c 'while true; do echo "client container still running"; sleep 60; done'
+    environment:
+      VAULT_ADDR: http://vault:8200
+      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/
+    volumes:
+      - ./vaultmanager:/vaultmanager
+
+  vault:
+    image: vault:1.1.0-beta2
+    cap_add:
+      - IPC_LOCK
+    environment:
+        VAULT_ADDR: http://127.0.0.1:8200
+        VAULT_LOCAL_CONFIG: '{"backend": {"file": {"path": "/vault/file"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h"}'
+    ports:
+      - 8200:8200
+    volumes:
+      - /vault/file
+      - /vault/logs
+  db:
+    image: postgres:10.4
+    environment:
+        POSTGRES_USER: vaultpg
+        POSTGRES_PASSWORD: monkey123
+    volumes:
+      - ./postgres/data:/pgdata
+      - ./postgres/initdb.d:/docker-entrypoint-initdb.d/
