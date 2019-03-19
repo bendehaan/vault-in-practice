@@ -9,6 +9,11 @@
 - We will run all our commands from the client container that has been started.  In a new terminal type
  
        docker exec -ti vault-in-practice_client_1 bash
+       
+       
+- 'vault operator init'
+
+- 'vault operator unseal'
 
 - Check everything is working; in the client bash run
 

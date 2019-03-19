@@ -11,11 +11,18 @@ services:
 
   vault:
     image: vault:1.1.0-beta2
+    command: server
     cap_add:
       - IPC_LOCK
     environment:
         VAULT_ADDR: http://127.0.0.1:8200
-        VAULT_LOCAL_CONFIG: '{"backend": {"file": {"path": "/vault/file"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h"}'
+        VAULT_LOCAL_CONFIG: '{"listener":{
+                                  "tcp":{
+                                      "address": "0.0.0.0:8200",
+                                      "cluster_addr": "0.0.0.0:8201",
+                                      "tls_disable": true
+                                  }
+                              },"backend": {"file": {"path": "/vault/file"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h"}'
     ports:
       - 8200:8200
     volumes:
