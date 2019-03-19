@@ -13,6 +13,14 @@
        
 - 'vault operator init'
 
+      Unseal Key 1: C85vMOVjVGrfCRMttk2Kfgg93upYCVb4SmBRf+sPYhv0
+      Unseal Key 2: Hp/LbMLwGN4jwOjcDr/uHCicVtv4e+yalo1KdnbTNmyQ
+      Unseal Key 3: oX3I/Jkgxny+8HUwT2kfA0T3Yv8TPt9vTtPJjhUfK+ri
+      Unseal Key 4: B6fzcpvdEC+JBziv8xyK89JkTKlY6riwQ+0fsBpuejEo
+      Unseal Key 5: NZV2tz31AfmQdq2LzPotLSUrpTFD70es9Tc/fY/XJ0ol
+    
+      Initial Root Token: s.LtwAGw2b9wvvP4iKZHEa1Fwn
+
 - 'vault operator unseal'
 
 - Check everything is working; in the client bash run
@@ -49,11 +57,15 @@
 
 - 'vault status'
 - 'vault login' use the root token from the log
+
+- 'vault secrets enable -version=2 -path=secret kv' enable the kv secrets engine secret; note this is the engine that is
+   enabled by default in when running in --dev mode.
+
 - 'vault kv put secret/workshop foo=bar'
 - 'vault kv get secret/workshop'
 - 'vault kv put secret/workshop foo=barbar'
 - 'vault kv get secret/workshop'
-- 'vault kv get --version=1 secret/workshop/one' get an older version
+- 'vault kv get --version=1 secret/workshop' get an older version
 
 - 'vault kv put secret/hello foo=bar' create four versions of a secret
 - 'vault kv put secret/hello foo=barr'
@@ -112,7 +124,7 @@ https://www.vaultproject.io/docs/secrets/databases/postgresql.html
 First we provision the vault by (in the client container) going into the directory /provision-vault/ first defining
 the token
 
-    export VAULT_TOKEN=s.fRiC5c78dJZ5Xvn5QmXnPai5
+    export VAULT_TOKEN=s.MzE9Kp6rlFLJiuhABGFz0PVd
     
 and then provisioning the vault using
 
