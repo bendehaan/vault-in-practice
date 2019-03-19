@@ -49,6 +49,29 @@
 
 * Setting the token securely
 
+## Using VaultManager
+
+First we provision the vault by (in the client container) going into the directory /provision-vault/ first defining
+the token
+
+    export VAULT_TOKEN=s.y6Ky8WAfvEePyAxRHncSQ2Aa
+    
+and then provisioning the vault using
+
+    ./provision.sh
+    
+Now go to localhost:8200 log in with the token.  In the cli container go to directory /vaultmanager/.  In that
+directory run
+
+    make getsecret
+    
+you then see the value of the secret.  In the ui, go to update the secret.  If you do it quick enough you will
+see the last line have the updated secret.
+
+Then do
+
+    make connection
+
 # Notes
 
 ## docker compose

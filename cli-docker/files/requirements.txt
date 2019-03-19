@@ -1,1 +1,4 @@
 # all requirements other than py-de-vault
+click
+pyyaml
+psycopg2-binary

@@ -19,8 +19,8 @@ services:
     ports:
       - 8200:8200
     volumes:
-      - /vault/file
-      - /vault/logs
+      - vaultfile:/vault/file
+      - vaultlogs:/vault/logs
   db:
     image: postgres:10.4
     environment:
@@ -29,3 +29,7 @@ services:
     volumes:
       - ./postgres/data:/pgdata
       - ./postgres/initdb.d:/docker-entrypoint-initdb.d/
+
+volumes:
+  vaultfile:
+  vaultlogs:
