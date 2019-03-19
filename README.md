@@ -61,7 +61,7 @@ and then provisioning the vault using
     ./provision.sh
     
 Now go to localhost:8200 log in with the token.  In the cli container go to directory /vaultmanager/.  In that
-directory run
+directory first update the VAULT_TOKEN in the Makefile, and then run
 
     make getsecret
     
@@ -72,6 +72,8 @@ Then do
 
     make connection
 
+there you see some data extracted from the database (compare with postgres/data/testtable.csv).
+
 # Notes
 
 ## docker compose
@@ -79,8 +81,9 @@ Then do
 In the docker compose file we set up three containers (1) client, the container in which we will be executing our
 commands (think of this as being a local shell on your laptop where all needed tools are already installed), (2) vault,
 this is the running vault service storing its data in a volume and exposing a port on your computer locally in case
-you want to interact with it using an installed vault binary, and (3) a postgres container for the demo with dynamic
-secrets.
+you want to interact with it using an installed vault binary or use the vault ui (localhost:8200) for updating secrets,
+and (3) a postgres container for the demo with dynamic secrets (and also used as an example for automatically updated
+derived "secret" in the vault manager).
 
 The postgres container has its configuration in two places, (1) in the docker compose file, (2) in the directory
 postgres/ which gets mounted into that container.  In this directory there is some test data so that we already have
