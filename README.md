@@ -4,13 +4,22 @@
 
 - To start vault and the other used docker containers run
 
-    docker-compose up
+      docker-compose up
+
+  this starts up 3 containers (client, vault, and postgres).  Can see this with 'docker ps'
+
+      CONTAINER ID        NAMES                        IMAGE                      STATUS
+      3bad8be2d9d6        vault-in-practice_vault_1    vault:1.1.0-beta2          Up 14 hours
+      4cd80e52d798        vault-in-practice_db_1       postgres:10.4              Up 14 hours
+      bf1a84a0cf0d        vault-in-practice_client_1   kasterma/vip:0.0.0         Up 14 hours
 
 - We will run all our commands from the client container that has been started.  In a new terminal type
  
        docker exec -ti vault-in-practice_client_1 bash
-       
-       
+  
+  this will give you a bash shell in the client container where we will execute all the commands.  Think of this shell
+  as the local shell on your laptop (but with everything you need installed).
+  
 - 'vault operator init'
 
       Unseal Key 1: C85vMOVjVGrfCRMttk2Kfgg93upYCVb4SmBRf+sPYhv0
@@ -21,7 +30,9 @@
     
       Initial Root Token: s.LtwAGw2b9wvvP4iKZHEa1Fwn
 
-- 'vault operator unseal'
+  Make sure you keep this info handy.  If you lose it you will need to start over.
+
+- 'vault operator unseal' repeatedly with the info above.
 
 - Check everything is working; in the client bash run
 
@@ -41,13 +52,11 @@
         Cluster ID      2864e1a8-7623-34d0-b9b6-ddde52e138b6
         HA Enabled      false
 
-- In the terminal where you run docker-compose up there is some logging information.  In particular there are two lines
-  of the form:
-  
-      vault_1   | Unseal Key: #################
-      vault_1   | Root Token: #################
-      
-  Note down both these tokens, they are essential for what follows.
+### Important note
+
+The data is stored on docker volumes.  So you can stop all containers (docker-compose down) and as long as you don't
+delete the volumes the data will be maintained.  Then when you start it back up, you need your unseal keys to
+be able to use it.  'make clean' will remove all data.
 
 ## Basic Vault operations
 
@@ -55,32 +64,37 @@
 
       docker exec -ti vault-in-practice_client_1 bash
 
-- 'vault status'
-- 'vault login' use the root token from the log
+- `vault status`
+- `vault login` use the root token from the log, now the token gets stored in '/root/.vault-token' (the user in the
+   container is root :-/ )
 
-- 'vault secrets enable -version=2 -path=secret kv' enable the kv secrets engine secret; note this is the engine that is
+- `vault secrets enable -version=2 -path=secret kv` enable the kv secrets engine secret; note this is the engine that is
    enabled by default in when running in --dev mode.
 
-- 'vault kv put secret/workshop foo=bar'
-- 'vault kv get secret/workshop'
-- 'vault kv put secret/workshop foo=barbar'
-- 'vault kv get secret/workshop'
-- 'vault kv get --version=1 secret/workshop' get an older version
+- `vault kv put secret/workshop foo=bar`
+- `vault kv get secret/workshop`
+- `vault kv put secret/workshop foo=barbar`
+- `vault kv get secret/workshop`
+- `vault kv get --version=1 secret/workshop` get an older version
 
-- 'vault kv put secret/hello foo=bar' create four versions of a secret
-- 'vault kv put secret/hello foo=barr'
-- 'vault kv put secret/hello foo=barrr'
-- 'vault kv put secret/hello foo=barrrr'
-- 'vault kv destroy -versions=2 secret/hello' this destroys the second version of the secret
+- `vault kv put secret/hello foo=bar` create four versions of a secret
+- `vault kv put secret/hello foo=barr`
+- `vault kv put secret/hello foo=barrr`
+- `vault kv put secret/hello foo=barrrr`
+- `vault kv destroy -versions=2 secret/hello` this destroys the second version of the secret
 
-- 'vault policy write test policy1.hcl'
-- 'vault auth enable userpass' this is using the API at https://www.vaultproject.io/api/auth/userpass/index.html, we
+- `vault auth list`
+- `vault policy write test policy1.hcl`
+- `vault auth enable userpass` this is using the API at https://www.vaultproject.io/api/auth/userpass/index.html, we
   are showing this here, but all interaction with Vault is through API described like this
-- 'vault write auth/userpass/users/workshop password="workshop" policies="test"'
-- 'vault login -method=userpass username=workshop password=workshop' login as the newly created user
-- 'vault kv get secret/hello' permission denied
-- 'vault kv get secret/workshop'
-- 'vault kv put secret/workshop foo=bar'
+- `vault write auth/userpass/users/workshop password="workshop" policies="test"`
+- `vault login -method=userpass username=workshop password=workshop` login as the newly created user
+- `vault auth list` see we now have more methods enabled
+- `vault kv get secret/hello` permission denied
+- `vault kv get secret/workshop`
+- `vault kv put secret/workshop foo=bar`
+
+- 'vault token lookup'
 
 ## 3. Initializing & unsealing Vault
 
