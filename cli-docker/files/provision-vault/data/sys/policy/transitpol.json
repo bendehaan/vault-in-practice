@@ -1,0 +1,3 @@
+{
+  "policy": "{\"path\": {\"sys/mounts/transit\": {\"capabilities\": [ \"create\", \"read\", \"update\", \"delete\", \"list\" ]},\"sys/mounts\": {\"capabilities\": [ \"read\" ]},\"transit/*\": {\"capabilities\": [ \"create\", \"read\", \"update\", \"delete\", \"list\" ]}"
+}
