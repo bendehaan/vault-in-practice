@@ -68,23 +68,38 @@ be able to use it.  'make clean' will remove all data.
 - `vault login` use the root token from the log, now the token gets stored in '/root/.vault-token' (the user in the
    container is root :-/ )
 
+### key value store
+
 - `vault secrets enable -version=2 -path=secret kv` enable the kv secrets engine secret; note this is the engine that is
-   enabled by default in when running in --dev mode.
+   enabled by default in when running in --dev mode.  It is a versioned key-value store that takes care of encryption
+   before storing in non-volatile storage, and access management through policies (later).
 
 - `vault kv put secret/workshop foo=bar`
 - `vault kv get secret/workshop`
-- `vault kv put secret/workshop foo=barbar`
+- `vault kv put secret/workshop foo=barbar` store new version of secret
 - `vault kv get secret/workshop`
 - `vault kv get --version=1 secret/workshop` get an older version
 
-- `vault kv put secret/hello foo=bar` create four versions of a secret
+- `curl --header "X-Vault-Token: $(cat /root/.vault-token)" ${VAULT_ADDR}/v1/secret/data/workshop` to request the
+  secret using the API (really the above vault cli commands are translated to such requests); see
+  https://www.vaultproject.io/api/secret/kv/kv-v2.html for the full description of the key-value store API.
+  
+- `curl --header "X-Vault-Token: $(cat /root/.vault-token)" ${VAULT_ADDR}/v1/secret/data/workshop?version=1`
+
+- open browser to localhost:8200/ui.  Use your token to login, go to the secret and update to a new version.  This is
+  again doing the same thing as the curl command, but in a more point and click way.
+
+- `vault kv put secret/hello foo=bar` create four versions of a secret.
 - `vault kv put secret/hello foo=barr`
 - `vault kv put secret/hello foo=barrr`
 - `vault kv put secret/hello foo=barrrr`
 - `vault kv destroy -versions=2 secret/hello` this destroys the second version of the secret
 
+### Authentication and Policies
+
 - `vault auth list`
-- `vault policy write test policy1.hcl`
+- `vault policy write test policy1.hcl` add a new policy that gives full access to only secrets that start with
+  workshop.
 - `vault auth enable userpass` this is using the API at https://www.vaultproject.io/api/auth/userpass/index.html, we
   are showing this here, but all interaction with Vault is through API described like this
 - `vault write auth/userpass/users/workshop password="workshop" policies="test"`
@@ -94,25 +109,19 @@ be able to use it.  'make clean' will remove all data.
 - `vault kv get secret/workshop`
 - `vault kv put secret/workshop foo=bar`
 
-- 'vault token lookup'
+- `vault token lookup`
 
-## 3. Initializing & unsealing Vault
+### Transit Secrets Engine
 
-* Run w/ backend Vault through docker-compose (contains volume)
-* Init
-* Bring it down
-* Bring it up again
-* Unseal
+https://learn.hashicorp.com/vault/encryption-as-a-service/eaas-transit
 
-## 4. Authenticating to vault
 
-* Setting the token securely
 
 ## Dynamic postgres secret
 
 https://www.vaultproject.io/docs/secrets/databases/postgresql.html
 
-- 'vault secrets enable database'
+- `vault secrets enable database`
 - create the dynamic secret
 
         vault write database/config/vaultpg \
@@ -129,9 +138,9 @@ https://www.vaultproject.io/docs/secrets/databases/postgresql.html
             default_ttl="1h" \
             max_ttl="24h"
 
-- 'vault read database/creds/create' to get freshly created credentials
+- `vault read database/creds/create` to get freshly created credentials
 
-- psql -h db -U v-root-create-es6wKLxlCagkQS9Gc9dN-1553011618 -d vaultpg
+- psql -h db -U [username from above] -d vaultpg
 
 ## Using VaultManager
 
@@ -140,7 +149,8 @@ the token
 
     export VAULT_TOKEN=s.MzE9Kp6rlFLJiuhABGFz0PVd
     
-and then provisioning the vault using
+and then provisioning the vault using (note this requires the step of enabling the kv store above to have been done
+before)
 
     ./provision.sh
     
@@ -150,13 +160,17 @@ directory first update the VAULT_TOKEN in the Makefile, and then run
     make getsecret
     
 you then see the value of the secret.  In the ui, go to update the secret.  If you do it quick enough you will
-see the last line have the updated secret.
+see the last line have the updated secret.  Inspect vaultmanager/example.py function `get_secret` to see how the
+VaultManager is used.
 
 Then do
 
     make connection
 
-there you see some data extracted from the database (compare with postgres/data/testtable.csv).
+there you see some data extracted from the database (compare with postgres/data/testtable.csv).  Now inspect
+vaultmanager/exmaple.py function `get_connection` to see how the VaultManager is used.  Note that the connection is
+a derived secret that is automatically updated by the VaultManager when the credentials as stored in vault are
+updated.
 
 # Notes
 
@@ -172,3 +186,10 @@ derived "secret" in the vault manager).
 The postgres container has its configuration in two places, (1) in the docker compose file, (2) in the directory
 postgres/ which gets mounted into that container.  In this directory there is some test data so that we already have
 a filled database to play with.
+
+## Provisioning in the VaultManager step
+
+In the cli-docker (directory cli-docker/files/provision-vault in this repo) you see a use of the pattern suggested
+at https://www.hashicorp.com/blog/codifying-vault-policies-and-configuration, but with also some secrets added (which
+clearly should not be managed in this way).  It consists of a directory structure that mirrors the api structure of
+vault, and a shell script (provision.sh) that sends the data in the appropriate order to vault to configure it.
