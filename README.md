@@ -53,7 +53,7 @@
 
 - Get a shell in the client container
 
-     docker exec -ti vault-in-practice_client_1 bash
+      docker exec -ti vault-in-practice_client_1 bash
 
 - 'vault status'
 - 'vault login' use the root token from the log
@@ -101,19 +101,19 @@ https://www.vaultproject.io/docs/secrets/databases/postgresql.html
 - 'vault secrets enable database'
 - create the dynamic secret
 
-    vault write database/config/vaultpg \
-        plugin_name=postgresql-database-plugin \
-        allowed_roles="create" \
-        connection_url="postgresql://{{username}}:{{password}}@db:5432/vaultpg?sslmode=disable" \
-        username="vaultpg" \
-        password="monkey123"
-
-    vault write database/roles/create \
-        db_name=vaultpg \
-        creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; \
-            GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
-        default_ttl="1h" \
-        max_ttl="24h"
+        vault write database/config/vaultpg \
+            plugin_name=postgresql-database-plugin \
+            allowed_roles="create" \
+            connection_url="postgresql://{{username}}:{{password}}@db:5432/vaultpg?sslmode=disable" \
+            username="vaultpg" \
+            password="monkey123"
+    
+        vault write database/roles/create \
+            db_name=vaultpg \
+            creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; \
+                GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
+            default_ttl="1h" \
+            max_ttl="24h"
 
 - 'vault read database/creds/create' to get freshly created credentials
 
