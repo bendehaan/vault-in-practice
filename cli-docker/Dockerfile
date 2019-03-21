@@ -10,7 +10,7 @@ FROM centos:7
 
 COPY --from=builder /vault /vault
 RUN yum install -y epel-release
-RUN yum install -y python36 make postgresql
+RUN yum install -y python36 make postgresql jq
 
 ADD files/get-pip.py /
 RUN python36 get-pip.py

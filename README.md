@@ -2,7 +2,8 @@
 
 ## Running Vault
 
-- To start vault and the other used docker containers run
+- To start vault and the other used docker containers run (make up) in the directory containing the docker-compose.yaml
+  file
 
       docker-compose up
 
@@ -13,14 +14,16 @@
       4cd80e52d798        vault-in-practice_db_1       postgres:10.4              Up 14 hours
       bf1a84a0cf0d        vault-in-practice_client_1   kasterma/vip:0.0.0         Up 14 hours
 
-- We will run all our commands from the client container that has been started.  In a new terminal type
+- We will run all our commands from the client container that has been started.  In a new terminal type (make exec)
  
        docker exec -ti vault-in-practice_client_1 bash
   
   this will give you a bash shell in the client container where we will execute all the commands.  Think of this shell
   as the local shell on your laptop (but with everything you need installed).
   
-- 'vault operator init'
+- `vault status` will now show that this vault is not initialized and is still sealed.
+  
+- `vault operator init`
 
       Unseal Key 1: C85vMOVjVGrfCRMttk2Kfgg93upYCVb4SmBRf+sPYhv0
       Unseal Key 2: Hp/LbMLwGN4jwOjcDr/uHCicVtv4e+yalo1KdnbTNmyQ
@@ -32,7 +35,8 @@
 
   Make sure you keep this info handy.  If you lose it you will need to start over.
 
-- 'vault operator unseal' repeatedly with the info above.
+- 'vault operator unseal' repeatedly with the info above.  After having done this three times you will see that the
+  vaul is both initialized and unsealed.
 
 - Check everything is working; in the client bash run
 
@@ -60,7 +64,7 @@ be able to use it.  'make clean' will remove all data.
 
 ## Basic Vault operations
 
-- Get a shell in the client container
+- Get a shell in the client container (make exec)
 
       docker exec -ti vault-in-practice_client_1 bash
 
@@ -115,7 +119,48 @@ be able to use it.  'make clean' will remove all data.
 
 https://learn.hashicorp.com/vault/encryption-as-a-service/eaas-transit
 
+Note: this requires the vaul to be provisioned by going to `/provision-vault/` in the cli container and running
+`./provision.sh`.
 
+You can check that the provisioning is correct by checking for the existence of the transitpol by running
+`vault policy read transitpol`.
+
+- `vault secrets enable transit` enable the transit secrets engine.
+
+- `vault write -f transit/keys/orders` create an encryption key ring named `orders`.
+
+- `plain="4111 1111 1111 1111"`
+
+- `plaintext=$(base64 <<< ${plain})` we first base64 encode the text, since then the plaintext is safe to be send as
+  part of http request or reply.
+
+- `vault write transit/encrypt/orders plaintext=$plaintext` encrypt it.  Note that Vault is not storing the data, it
+  only stores the keys and arranges access to the keys through policies, the user manages the data.
+
+- `cipher=$(vault write transit/encrypt/orders plaintext=$plaintext -format=json)` encrypt it again, but now get json
+  output and store in variable cipher.
+  
+- equivalently
+
+      curl --header "X-Vault-Token: $VAULT_TOKEN" \
+           --request POST \
+           --data '{"plaintext": "NDExMSAxMTExIDExMTEgMTExMQo="}' \
+           http://vault:8200/v1/transit/encrypt/orders
+           
+  which shows how easy it is to use from an application (note that you can always get the curl equivalent by running
+  `vault write -output-curl-string transit/encrypt/orders plaintext=$plaintext`; note `-output-curl-string` should work
+  for most if not all vault commands).
+
+- `ciphertext=$(echo $cipher | jq -r .data.ciphertext)`
+
+- `vault write transit/decrypt/orders ciphertext=$ciphertext` decrypt the ciphertext you just created.
+
+- equivalently
+
+      curl --header "X-Vault-Token: $VAULT_TOKEN" \
+           --request POST \
+           --data '{"ciphertext": "$ciphertext"}' \
+       http://vault:8200/v1/transit/decrypt/orders
 
 ## Dynamic postgres secret
 
@@ -144,15 +189,11 @@ https://www.vaultproject.io/docs/secrets/databases/postgresql.html
 
 ## Using VaultManager
 
-First we provision the vault by (in the client container) going into the directory /provision-vault/ first defining
-the token
+Note this requires
 
-    export VAULT_TOKEN=s.MzE9Kp6rlFLJiuhABGFz0PVd
-    
-and then provisioning the vault using (note this requires the step of enabling the kv store above to have been done
-before)
+1. the step of enabling the kv store above to have been done before (`vault secrets enable -version=2 -path=secret kv`).
 
-    ./provision.sh
+2. the vault being provisioned (`./provision.sh` in directory /provision-vault/).
     
 Now go to localhost:8200 log in with the token.  In the cli container go to directory /vaultmanager/.  In that
 directory first update the VAULT_TOKEN in the Makefile, and then run

@@ -1,5 +1,5 @@
 IMAGE=kasterma/vip
-TAG=0.0.0
+TAG=$(shell cat VERSION)
 
 build: files/get-pip.py
 	docker build -t ${IMAGE}:${TAG} .

@@ -1,7 +1,7 @@
 version: '3'
 services:
   client:
-    image: kasterma/vip:0.0.0
+    image: kasterma/vip:1.0.1
     command: sh -c 'while true; do echo "client container still running"; sleep 60; done'
     environment:
       VAULT_ADDR: http://vault:8200

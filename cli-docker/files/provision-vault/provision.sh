@@ -3,6 +3,8 @@ set -e
 
 shopt -s nullglob
 
+export VAULT_TOKEN=${VAULT_TOKEN:-$(vault print token)}
+
 echo TOK ${VAULT_TOKEN}
 
 function provision() {
