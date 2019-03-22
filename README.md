@@ -1,5 +1,19 @@
 # Vault Workshop
 
+In following this outline you will:
+
+1. Start a Vault environment using docker-compose (see [notes](#notes))
+2. Do basic Vault operations
+3. Create a dynamic secret
+4. Use the transit secret backend
+5. Use VaultManager as wrapper
+
+## Requirements
+
+* Docker
+* Docker compose
+  * If you haven't got docker compose, installing it through pip is the easiest option.
+
 ## Running Vault
 
 - To start vault and the other used docker containers run (make up) in the directory containing the docker-compose.yaml
@@ -15,7 +29,7 @@
       bf1a84a0cf0d        vault-in-practice_client_1   kasterma/vip:0.0.0         Up 14 hours
 
 - We will run all our commands from the client container that has been started.  In a new terminal type (make exec)
- 
+
        docker exec -ti vault-in-practice_client_1 bash
   
   this will give you a bash shell in the client container where we will execute all the commands.  Think of this shell
@@ -33,16 +47,15 @@
     
       Initial Root Token: s.LtwAGw2b9wvvP4iKZHEa1Fwn
 
-  Make sure you keep this info handy.  If you lose it you will need to start over.
+Make sure you keep this info handy.  **If you lose it you will need to start over.**
 
-- 'vault operator unseal' repeatedly with the info above.  After having done this three times you will see that the
-  vaul is both initialized and unsealed.
+- `vault operator unseal` repeatedly with the info above.  After having done this three times you will see that the vault is both initialized and unsealed.
 
 - Check everything is working; in the client bash run
 
        vault status
     
-  and you should see an output of the form
+  and you should see an output of the form:
   
         Key             Value
         ---             -----
@@ -58,9 +71,7 @@
 
 ### Important note
 
-The data is stored on docker volumes.  So you can stop all containers (docker-compose down) and as long as you don't
-delete the volumes the data will be maintained.  Then when you start it back up, you need your unseal keys to
-be able to use it.  'make clean' will remove all data.
+The data is stored on docker volumes.  So you can stop all containers (docker-compose down) and as long as you don't delete the volumes the data will be maintained.  Then when you start it back up, you need your unseal keys to be able to use it. Running `make clean` will remove all data.
 
 ## Basic Vault operations
 
@@ -68,20 +79,20 @@ be able to use it.  'make clean' will remove all data.
 
       docker exec -ti vault-in-practice_client_1 bash
 
-- `vault status`
+- `vault status` - check if everything's okay.
 - `vault login` use the root token from the log, now the token gets stored in '/root/.vault-token' (the user in the
-   container is root :-/ )
+   container is root :-/ Bonus points if you can explain why this is bad practice!)
 
-### key value store
+### Key value store
 
-- `vault secrets enable -version=2 -path=secret kv` enable the kv secrets engine secret; note this is the engine that is
+- `vault secrets enable -version=2 -path=secret kv` enable the kv secrets engine; note this is the engine that is
    enabled by default in when running in --dev mode.  It is a versioned key-value store that takes care of encryption
    before storing in non-volatile storage, and access management through policies (later).
 
-- `vault kv put secret/workshop foo=bar`
-- `vault kv get secret/workshop`
-- `vault kv put secret/workshop foo=barbar` store new version of secret
-- `vault kv get secret/workshop`
+- `vault kv put secret/workshop foo=bar` - create a secret (note that this is bad practice since it'll show up in your shell history).
+- `vault kv get secret/workshop` - retrieve the secret
+- `vault kv put secret/workshop foo=barbar` - store new version of secret
+- `vault kv get secret/workshop` - retrieve the secret again and note the version
 - `vault kv get --version=1 secret/workshop` get an older version
 
 - `curl --header "X-Vault-Token: $(cat /root/.vault-token)" ${VAULT_ADDR}/v1/secret/data/workshop` to request the
@@ -90,7 +101,7 @@ be able to use it.  'make clean' will remove all data.
   
 - `curl --header "X-Vault-Token: $(cat /root/.vault-token)" ${VAULT_ADDR}/v1/secret/data/workshop?version=1`
 
-- open browser to localhost:8200/ui.  Use your token to login, go to the secret and update to a new version.  This is
+- open browser to `localhost:8200/ui`.  Use your token to login, go to the secret and update to a new version.  This is
   again doing the same thing as the curl command, but in a more point and click way.
 
 - `vault kv put secret/hello foo=bar` create four versions of a secret.
@@ -101,19 +112,18 @@ be able to use it.  'make clean' will remove all data.
 
 ### Authentication and Policies
 
-- `vault auth list`
-- `vault policy write test policy1.hcl` add a new policy that gives full access to only secrets that start with
-  workshop.
+- `vault auth list` - retrieve the list of enabled authentication options
+- `vault policy write test policy1.hcl` add a new policy that gives full access to only secrets that start with workshop.
 - `vault auth enable userpass` this is using the API at https://www.vaultproject.io/api/auth/userpass/index.html, we
   are showing this here, but all interaction with Vault is through API described like this
-- `vault write auth/userpass/users/workshop password="workshop" policies="test"`
+- `vault write auth/userpass/users/workshop password="workshop" policies="test"` - create a user bound to the previously created policy
 - `vault login -method=userpass username=workshop password=workshop` login as the newly created user
 - `vault auth list` see we now have more methods enabled
 - `vault kv get secret/hello` permission denied
 - `vault kv get secret/workshop`
 - `vault kv put secret/workshop foo=bar`
 
-- `vault token lookup`
+- `vault token lookup` retrieve info about your token and associated policies
 
 ### Transit Secrets Engine
 
@@ -131,7 +141,7 @@ You can check that the provisioning is correct by checking for the existence of 
 
 - `plain="4111 1111 1111 1111"`
 
-- `plaintext=$(base64 <<< ${plain})` we first base64 encode the text, since then the plaintext is safe to be send as
+- `plaintext=$(base64 <<< ${plain})` we first base64 encode the text, since then the plaintext is safe to be sent as
   part of http request or reply.
 
 - `vault write transit/encrypt/orders plaintext=$plaintext` encrypt it.  Note that Vault is not storing the data, it
@@ -146,7 +156,7 @@ You can check that the provisioning is correct by checking for the existence of 
            --request POST \
            --data '{"plaintext": "NDExMSAxMTExIDExMTEgMTExMQo="}' \
            http://vault:8200/v1/transit/encrypt/orders
-           
+
   which shows how easy it is to use from an application (note that you can always get the curl equivalent by running
   `vault write -output-curl-string transit/encrypt/orders plaintext=$plaintext`; note `-output-curl-string` should work
   for most if not all vault commands).
@@ -175,7 +185,7 @@ https://www.vaultproject.io/docs/secrets/databases/postgresql.html
             connection_url="postgresql://{{username}}:{{password}}@db:5432/vaultpg?sslmode=disable" \
             username="vaultpg" \
             password="monkey123"
-    
+
         vault write database/roles/create \
             db_name=vaultpg \
             creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; \
@@ -183,7 +193,7 @@ https://www.vaultproject.io/docs/secrets/databases/postgresql.html
             default_ttl="1h" \
             max_ttl="24h"
 
-- `vault read database/creds/create` to get freshly created credentials
+- `vault read database/creds/create` to get freshly created credentials. Note the lease duration and whether it's renewable.
 
 - psql -h db -U [username from above] -d vaultpg
 
@@ -194,24 +204,19 @@ Note this requires
 1. the step of enabling the kv store above to have been done before (`vault secrets enable -version=2 -path=secret kv`).
 
 2. the vault being provisioned (`./provision.sh` in directory /provision-vault/).
-    
-Now go to localhost:8200 log in with the token.  In the cli container go to directory /vaultmanager/.  In that
+
+Now go to localhost:8200 log in with the token.  In the cli container go to directory `/vaultmanager/`.  In that
 directory first update the VAULT_TOKEN in the Makefile, and then run
 
     make getsecret
-    
-you then see the value of the secret.  In the ui, go to update the secret.  If you do it quick enough you will
-see the last line have the updated secret.  Inspect vaultmanager/example.py function `get_secret` to see how the
-VaultManager is used.
+
+You then see the value of the secret.  In the ui, go to update the secret.  If you do it quick enough you will see the last line have the updated secret.  Inspect `vaultmanager/example.py` function `get_secret` to see how the VaultManager is used.
 
 Then do
 
     make connection
 
-there you see some data extracted from the database (compare with postgres/data/testtable.csv).  Now inspect
-vaultmanager/exmaple.py function `get_connection` to see how the VaultManager is used.  Note that the connection is
-a derived secret that is automatically updated by the VaultManager when the credentials as stored in vault are
-updated.
+there you see some data extracted from the database (compare with postgres/data/testtable.csv).  Now inspect `vaultmanager/exmaple.py` function `get_connection` to see how the VaultManager is used.  Note that the connection is a derived secret that is automatically updated by the VaultManager when the credentials as stored in vault are updated.
 
 # Notes
 
