@@ -24,13 +24,13 @@ In following this outline you will:
   this starts up 3 containers (client, vault, and postgres).  Can see this with 'docker ps'
 
       CONTAINER ID        NAMES                        IMAGE                      STATUS
-      3bad8be2d9d6        vault-in-practice_vault_1    vault:1.1.0-beta2          Up 14 hours
-      4cd80e52d798        vault-in-practice_db_1       postgres:10.4              Up 14 hours
-      bf1a84a0cf0d        vault-in-practice_client_1   kasterma/vip:0.0.0         Up 14 hours
+      3bad8be2d9d6        vault-in-practice-vault-1    vault:1.1.0-beta2          Up 14 hours
+      4cd80e52d798        vault-in-practice-db-1       postgres:10.4              Up 14 hours
+      bf1a84a0cf0d        vault-in-practice-client-1   kasterma/vip:0.0.0         Up 14 hours
 
 - We will run all our commands from the client container that has been started.  In a new terminal type (make exec)
 
-       docker exec -ti vault-in-practice_client_1 bash
+       docker exec -ti vault-in-practice-client-1 bash
   
   this will give you a bash shell in the client container where we will execute all the commands.  Think of this shell
   as the local shell on your laptop (but with everything you need installed).
@@ -77,11 +77,13 @@ The data is stored on docker volumes.  So you can stop all containers (docker-co
 
 - Get a shell in the client container (make exec)
 
-      docker exec -ti vault-in-practice_client_1 bash
+      docker exec -ti vault-in-practice-client-1 bash
 
 - `vault status` - check if everything's okay.
 - `vault login` use the root token from the log, now the token gets stored in '/root/.vault-token' (the user in the
    container is root :-/ Bonus points if you can explain why this is bad practice!)
+
+- `vault audit enable file file_path=stdout` to enable audit logging. Nice to see what's happening!
 
 ### Key value store
 
@@ -204,6 +206,8 @@ Note this requires
 1. the step of enabling the kv store above to have been done before (`vault secrets enable -version=2 -path=secret kv`).
 
 2. the vault being provisioned (`./provision.sh` in directory /provision-vault/).
+
+3. VaultManager :) (try: `pip install --index-url https://artifacts.kpn.org/api/pypi/pypi/simple/ --trusted-host artifacts.kpn.org py-de-vault`)
 
 Now go to localhost:8200 log in with the token.  In the cli container go to directory `/vaultmanager/`.  In that
 directory first update the VAULT_TOKEN in the Makefile, and then run
