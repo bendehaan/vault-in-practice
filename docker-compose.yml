@@ -17,7 +17,7 @@ services:
     environment:
       VAULT_ADDR: http://127.0.0.1:8200
       VAULT_LOCAL_CONFIG: |
-        '{
+        {
           "listener": {
             "tcp":{
             "address": "0.0.0.0:8200",
@@ -29,7 +29,7 @@ services:
           "default_lease_ttl": "168h",
           "max_lease_ttl": "720h",
           "ui": true
-        }'
+        }
     ports:
       - 8200:8200
     volumes:
