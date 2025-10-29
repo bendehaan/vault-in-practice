@@ -1,4 +1,3 @@
-version: "3"
 services:
   client:
     image: kasterma/vip:1.0.1
