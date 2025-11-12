@@ -19,7 +19,7 @@ In following this outline you will:
 - To start vault and the other used docker containers run (make up) in the directory containing the docker-compose.yaml
   file
 
-      docker-compose up
+      docker compose up
 
   this starts up 3 containers (client, vault, and postgres).  Can see this with 'docker ps'
 
