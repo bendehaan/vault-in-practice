@@ -118,9 +118,9 @@ The data is stored on docker volumes.  So you can stop all containers (docker-co
 - `vault policy write test policy1.hcl` add a new policy that gives full access to only secrets that start with workshop.
 - `vault auth enable userpass` this is using the API at https://www.vaultproject.io/api/auth/userpass/index.html, we
   are showing this here, but all interaction with Vault is through API described like this
+- `vault auth list` see we now have more methods enabled
 - `vault write auth/userpass/users/workshop password="workshop" policies="test"` - create a user bound to the previously created policy
 - `vault login -method=userpass username=workshop password=workshop` login as the newly created user
-- `vault auth list` see we now have more methods enabled
 - `vault kv get secret/hello` permission denied
 - `vault kv get secret/workshop`
 - `vault kv put secret/workshop foo=bar`
