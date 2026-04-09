@@ -35,7 +35,7 @@ services:
       - vaultfile:/vault/file
       - vaultlogs:/vault/logs
   db:
-    image: postgres:10.4
+    image: postgres:18.0
     environment:
       POSTGRES_USER: vaultpg
       POSTGRES_PASSWORD: monkey123
